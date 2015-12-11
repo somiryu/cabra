@@ -10,7 +10,7 @@ display.setStatusBar( display.HiddenStatusBar )
 local W = display.contentWidth
 local H = display.contentHeight
 
-local objectSheet = require("cabrawalk")
+local objectSheet = require("libs.cabrawalk")
 local myObjectSheet = graphics.newImageSheet("images/cabrawalk.png",objectSheet:getSheet())
 
 local newCabraWalk = display.newSprite(myObjectSheet,objectSheet:getSequenceData())
