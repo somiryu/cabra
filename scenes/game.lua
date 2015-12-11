@@ -59,6 +59,14 @@ function scene:create( event )
 				if self.llama.x < - 10 or self.llama.y > display.contentHeight + 300 then
 					timer.performWithDelay( 2000, gameOver, 1 )
 				end
+
+				--check llama accel
+				local xAccel, yAccel = self.llama:getLinearVelocity( )
+				print(yAccel)
+				if yAccel > 0 and self.llama.state == "raising" then
+					llama.changeSprite(self.llama, "fall")
+      				self.llama.state = "falling"
+				end
 			end
 
 			self.animation = timer.performWithDelay(1, moveBg, -1 )
@@ -74,16 +82,14 @@ function scene:create( event )
 		if e.phase == "began" then
 			Runtime:addEventListener("enterFrame", holdTimer)
 		elseif e.phase == "ended" then
-		print("ENDED")
 			local force = forceApplied
 			Runtime:removeEventListener( "enterFrame", holdTimer)
 			forceApplied = -2000
-			print("Force")
-			print(self.llama.canJump)
 			if ( self.llama.canJump == 2 ) then
       		--jump procedure here
       			print("JUMP 2")
       			llama.changeSprite(self.llama, "jump")
+      			self.llama.state = "raising"
       			self.llama.canJump = 0
       			self.llama:applyForce( 0, force, self.llama.x - 40000, self.llama.y)
    			end
@@ -91,6 +97,7 @@ function scene:create( event )
       			--jump procedure here
       			print("JUMP 1")
       			llama.changeSprite(self.llama, "jump")
+      			self.llama.state = "raising"
       			self.llama.canJump = self.llama.canJump + 1
       			self.llama:applyForce( 0, force, self.llama.x, self.llama.y)
    			end

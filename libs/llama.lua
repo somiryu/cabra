@@ -24,6 +24,7 @@ llama.new = function(group)
 	physics.addBody( llama, { density=8, friction=0, bounce=0 })
 	llama.isFixedRotation = true
 	llama.canJump = 1
+	llama.state = "grounded"
 	llama.isSleepingAllowed = false
 	llama:addEventListener( "collision", collisionListener )
 
