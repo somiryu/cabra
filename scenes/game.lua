@@ -36,11 +36,19 @@ function scene:create( event )
 	function tapScreen(e)
 		if game_active == false then
 		-- Begin the game
-			game_active = true
+			local gameOver = function(e)
+				timer.cancel( self.animation )
+				for i =1, #terrains do
+					terrains[i]:setLinearVelocity(0,0)
+				end
+			end
+			
 			local function moveBg(e)
 				for i =1, #terrains do
 					terrains[i]:setLinearVelocity(-500,0)
 				end
+
+				game_active = true
 
 				local xAbsPos, yAbsPos = terrains[1]:localToContent(0,0)
 				if xAbsPos < display.contentWidth * 0.25 * -1 then
@@ -48,9 +56,15 @@ function scene:create( event )
 					table.remove(terrains, 1)
 					table.insert(terrains, terrain.newTerrain(self.terrains, terrains[#terrains].x + terrains[#terrains].width))
 				end
+				if self.llama.x < - 10 then
+					print("VAMOS")
+					timer.performWithDelay( 2000, gameOver, 1 )
+				end
 			end
 
-			self.animation = Runtime:addEventListener("enterFrame", moveBg )
+			
+
+			self.animation = timer.performWithDelay(1, moveBg, -1 )
 		end
 
 	end
