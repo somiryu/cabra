@@ -56,13 +56,10 @@ function scene:create( event )
 					table.remove(terrains, 1)
 					table.insert(terrains, terrain.newTerrain(self.terrains, terrains[#terrains].x + terrains[#terrains].width))
 				end
-				if self.llama.x < - 10 then
-					print("VAMOS")
+				if self.llama.x < - 10 or self.llama.y > display.contentHeight + 300 then
 					timer.performWithDelay( 2000, gameOver, 1 )
 				end
 			end
-
-			
 
 			self.animation = timer.performWithDelay(1, moveBg, -1 )
 		end
@@ -71,7 +68,6 @@ function scene:create( event )
 
 	local function holdTimer(e)
 		forceApplied = forceApplied - 5000
-		print("Ruinning")
 	end
 
 	local function jumpLlama(e)
@@ -83,14 +79,18 @@ function scene:create( event )
 			Runtime:removeEventListener( "enterFrame", holdTimer)
 			forceApplied = -2000
 			print("Force")
-			print(force)
+			print(self.llama.canJump)
 			if ( self.llama.canJump == 2 ) then
       		--jump procedure here
+      			print("JUMP 2")
+      			llama.changeSprite(self.llama, "jump")
       			self.llama.canJump = 0
       			self.llama:applyForce( 0, force, self.llama.x - 40000, self.llama.y)
    			end
 			if ( self.llama.canJump == 1 ) then
       			--jump procedure here
+      			print("JUMP 1")
+      			llama.changeSprite(self.llama, "jump")
       			self.llama.canJump = self.llama.canJump + 1
       			self.llama:applyForce( 0, force, self.llama.x, self.llama.y)
    			end

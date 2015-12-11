@@ -9,6 +9,7 @@ ceilings.newCeiling = function(group, lastX)
 	obj.y = obj.y + obj.height/2
 	obj:setFillColor( 0.3,0.8,0.7 )
 	physics.addBody( obj, "static")
+	obj.objType = "ceiling"
 
 	return obj
 end

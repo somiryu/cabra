@@ -36,7 +36,6 @@ terrain.newTerrain = function(group, lastX, index)
 	end
 
 	if gaps > 800 then
-		print("CREATING " .. gaps)
 		local terrain_num = math.random( 1,22 )
 		local dim = terrain.dimensions[terrain_num]
 		t = display.newImageRect( group, "images/l_piso" .. terrain_num .. ".png", dim[1], dim[2] )
@@ -52,7 +51,7 @@ terrain.newTerrain = function(group, lastX, index)
 	else
 		--CREATE GAP
 		t = display.newRect( group, lastX, display.contentHeight, gaps, 20 )
-		physics.addBody( t, "kinematic" )
+		physics.addBody( t, "kinematic", {isSensor=true} )
 		t.anchorX = 0.5
 		t.alpha = 0
 		t.objType = "gap"
