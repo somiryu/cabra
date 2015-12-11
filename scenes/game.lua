@@ -19,13 +19,16 @@ local Utils = require "libs.utils"
 local terrains = {}
 local ceilings = {}
 local game_active = false
+local game_ended = false
 local scrollSpeed = -8
 local index = 1
 local forceApplied = -20000
+local terrainSpeed = -800
+local ceilingSpeed = -350
 
 physics.start()
 physics.setGravity( 0, 9)
-physics.setDrawMode( "hybrid" )
+--physics.setDrawMode( "hybrid" )
 
 
 
@@ -36,16 +39,45 @@ function scene:create( event )
 	function tapScreen(e)
 		if game_active == false then
 		-- Begin the game
+			self.llama:play()
+
 			local gameOver = function(e)
 				timer.cancel( self.animation )
 				for i =1, #terrains do
 					terrains[i]:setLinearVelocity(0,0)
 				end
+
+				for i =1, #ceilings do
+					ceilings[i]:setLinearVelocity(00,0)
+				end
+
+				local function showGameOver(e)
+					print("happening")
+					local gameOver = display.newImageRect( sceneGroup, "images/l_gameover.png", 661, 363 )
+					gameOver.x = display.contentCenterX
+					gameOver.y = display.contentHeight * 0.4
+					gameOver.xScale = 0.01
+					gameOver.yScale = 0.01
+
+					local function restart(e)
+						local currScene = composer.getSceneName( "current" )
+						composer.removeScene( currScene )
+						composer.gotoScene( currScene )
+					end
+
+					gameOver:addEventListener( "tap", restart )
+					transition.to(gameOver, {time=800, xScale=1, yScale=1, transition=easing.outElastic})
+				end
+				timer.performWithDelay( 300, showGameOver, 1 )
 			end
 			
 			local function moveBg(e)
 				for i =1, #terrains do
-					terrains[i]:setLinearVelocity(-500,0)
+					terrains[i]:setLinearVelocity(terrainSpeed,0)
+				end
+
+				for i =1, #ceilings do
+					ceilings[i]:setLinearVelocity(ceilingSpeed,0)
 				end
 
 				game_active = true
@@ -56,16 +88,40 @@ function scene:create( event )
 					table.remove(terrains, 1)
 					table.insert(terrains, terrain.newTerrain(self.terrains, terrains[#terrains].x + terrains[#terrains].width))
 				end
-				if self.llama.x < - 10 or self.llama.y > display.contentHeight + 300 then
-					timer.performWithDelay( 2000, gameOver, 1 )
+
+				local xAbsPos, yAbsPos = ceilings[1]:localToContent(0,0)
+				if xAbsPos < display.contentWidth * 0.25 * -1 then
+					ceilings[1]:removeSelf( )
+					table.remove(ceilings, 1)
+					table.insert(ceilings, ceiling.newCeiling(self.terrains, ceilings[#ceilings].x + ceilings[#ceilings].width))
+				end
+
+				--gameOver
+				if self.llama.x < display.contentWidth * 0.15 or self.llama.y > display.contentHeight + 300 then
+					if not game_ended then
+						llama.changeSprite(self.llama, "hitwall")
+      					self.llama.state = "dead"
+						timer.performWithDelay( 1000, gameOver, 1 )
+						game_ended = true
+					end
 				end
 
 				--check llama accel
 				local xAccel, yAccel = self.llama:getLinearVelocity( )
-				print(yAccel)
 				if yAccel > 0 and self.llama.state == "raising" then
 					llama.changeSprite(self.llama, "fall")
       				self.llama.state = "falling"
+				end
+
+				if yAccel > 0 and self.llama.state == "grounded" then
+					llama.changeSprite(self.llama, "fall")
+      				self.llama.state = "falling"
+      				self.llama.canJump = 2
+				end
+
+				if yAccel > 300 and self.llama.state == "falling" then
+					llama.changeSprite(self.llama, "freefall")
+      				self.llama.state = "free falling"
 				end
 			end
 
@@ -91,7 +147,7 @@ function scene:create( event )
       			llama.changeSprite(self.llama, "jump")
       			self.llama.state = "raising"
       			self.llama.canJump = 0
-      			self.llama:applyForce( 0, force, self.llama.x - 40000, self.llama.y)
+      			self.llama:applyForce( 0, force, self.llama.x - 60000, self.llama.y)
    			end
 			if ( self.llama.canJump == 1 ) then
       			--jump procedure here
@@ -106,7 +162,7 @@ function scene:create( event )
 	end
 
 	-- display a background image
-	local bg = display.newImageRect( sceneGroup, "images/l_background.png", 1440, 821 )
+	local bg = display.newImageRect( sceneGroup, "images/l_background.png", 1440, 900 )
 	bg.x = display.contentCenterX
 	bg.y = display.contentCenterY
 	bg:addEventListener( "tap", tapScreen )
@@ -130,7 +186,7 @@ function scene:show( event )
 		self.terrains = display.newGroup( )
 		sceneGroup:insert(self.terrains)
 
-		local lastX = display.contentWidth * 0.15 - 80
+		local lastX = initialPos - 80
 		local lastXC = -10
 		for i = 1, 20 do
 			terrains[i] = terrain.newTerrain(self.terrains, lastX, i)
@@ -141,7 +197,7 @@ function scene:show( event )
 
 		-- CREATE A NE LLAMA
 		self.llama = llama.new(sceneGroup)
-		
+
 
 
 	end	
@@ -158,8 +214,6 @@ function scene:hide( event )
 		-- e.g. stop timers, stop animation, unload sounds, etc.)
 	elseif phase == "did" then
 		-- Called when the scene is now off screen
-		self.terrains:removeSelf( )
-		self.terrains = nil
 	end	
 end
 

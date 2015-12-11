@@ -37,10 +37,13 @@ terrain.newTerrain = function(group, lastX, index)
 
 	if gaps > 800 then
 		local terrain_num = math.random( 1,22 )
+		if index and index == 1 then 
+			terrain_num = 1 
+		end
 		local dim = terrain.dimensions[terrain_num]
 		t = display.newImageRect( group, "images/l_piso" .. terrain_num .. ".png", dim[1], dim[2] )
-		t.x = lastX
-		t.y = display.contentHeight
+		t.x = lastX -3
+		t.y = display.contentHeight + 50
 		t.anchorX, t.anchorY = 0, 1
 		local hW = t.width/2 -5
 		local hH = t.height/2 * -1 - 5
