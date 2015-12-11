@@ -6,23 +6,111 @@
 
 local composer = require( "composer" )
 local scene = composer.newScene()
+local physics = require( "physics" )
 
 -- include Corona's "widget" library
 local widget = require "widget"
+local terrain = require "libs.terrain"
+local ceiling = require "libs.ceilings"
+local llama = require "libs.llama"
+local Utils = require "libs.utils"
 
 --------------------------------------------
+local terrains = {}
+local ceilings = {}
+local game_active = false
+local scrollSpeed = -8
+local index = 1
+local forceApplied = -20000
+
+physics.start()
+physics.setGravity( 0, 9)
+physics.setDrawMode( "hybrid" )
+
 
 
 
 function scene:create( event )
 	local sceneGroup = self.view
 
-	-- Called when the scene's view does not exist.
-	-- 
-	-- INSERT code here to initialize the scene
-	-- e.g. add display objects to 'sceneGroup', add touch listeners, etc.
+	function tapScreen(e)
+		if game_active == false then
+		-- Begin the game
+			local gameOver = function(e)
+				timer.cancel( self.animation )
+				for i =1, #terrains do
+					terrains[i]:setLinearVelocity(0,0)
+				end
+			end
+			
+			local function moveBg(e)
+				for i =1, #terrains do
+					terrains[i]:setLinearVelocity(-500,0)
+				end
+
+				game_active = true
+
+				local xAbsPos, yAbsPos = terrains[1]:localToContent(0,0)
+				if xAbsPos < display.contentWidth * 0.25 * -1 then
+					terrains[1]:removeSelf( )
+					table.remove(terrains, 1)
+					table.insert(terrains, terrain.newTerrain(self.terrains, terrains[#terrains].x + terrains[#terrains].width))
+				end
+				if self.llama.x < - 10 or self.llama.y > display.contentHeight + 300 then
+					timer.performWithDelay( 2000, gameOver, 1 )
+				end
+
+				--check llama accel
+				local xAccel, yAccel = self.llama:getLinearVelocity( )
+				print(yAccel)
+				if yAccel > 0 and self.llama.state == "raising" then
+					llama.changeSprite(self.llama, "fall")
+      				self.llama.state = "falling"
+				end
+			end
+
+			self.animation = timer.performWithDelay(1, moveBg, -1 )
+		end
+
+	end
+
+	local function holdTimer(e)
+		forceApplied = forceApplied - 5000
+	end
+
+	local function jumpLlama(e)
+		if e.phase == "began" then
+			Runtime:addEventListener("enterFrame", holdTimer)
+		elseif e.phase == "ended" then
+			local force = forceApplied
+			Runtime:removeEventListener( "enterFrame", holdTimer)
+			forceApplied = -2000
+			if ( self.llama.canJump == 2 ) then
+      		--jump procedure here
+      			print("JUMP 2")
+      			llama.changeSprite(self.llama, "jump")
+      			self.llama.state = "raising"
+      			self.llama.canJump = 0
+      			self.llama:applyForce( 0, force, self.llama.x - 40000, self.llama.y)
+   			end
+			if ( self.llama.canJump == 1 ) then
+      			--jump procedure here
+      			print("JUMP 1")
+      			llama.changeSprite(self.llama, "jump")
+      			self.llama.state = "raising"
+      			self.llama.canJump = self.llama.canJump + 1
+      			self.llama:applyForce( 0, force, self.llama.x, self.llama.y)
+   			end
+		end
+
+	end
 
 	-- display a background image
+	local bg = display.newImageRect( sceneGroup, "images/l_background.png", 1440, 821 )
+	bg.x = display.contentCenterX
+	bg.y = display.contentCenterY
+	bg:addEventListener( "tap", tapScreen )
+	bg:addEventListener( "touch", jumpLlama )
 	
 end
 
@@ -37,6 +125,25 @@ function scene:show( event )
 		-- 
 		-- INSERT code here to make the scene come alive
 		-- e.g. start timers, begin animation, play audio, etc.
+		
+
+		self.terrains = display.newGroup( )
+		sceneGroup:insert(self.terrains)
+
+		local lastX = display.contentWidth * 0.15 - 80
+		local lastXC = -10
+		for i = 1, 20 do
+			terrains[i] = terrain.newTerrain(self.terrains, lastX, i)
+			lastX = lastX + terrains[i].width
+			ceilings[i] = ceiling.newCeiling(self.terrains, lastXC)
+			lastXC = lastXC + ceilings[i].width
+		end
+
+		-- CREATE A NE LLAMA
+		self.llama = llama.new(sceneGroup)
+		
+
+
 	end	
 end
 
@@ -51,6 +158,8 @@ function scene:hide( event )
 		-- e.g. stop timers, stop animation, unload sounds, etc.)
 	elseif phase == "did" then
 		-- Called when the scene is now off screen
+		self.terrains:removeSelf( )
+		self.terrains = nil
 	end	
 end
 
