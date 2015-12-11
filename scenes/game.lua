@@ -21,6 +21,7 @@ local ceilings = {}
 local game_active = false
 local scrollSpeed = -8
 local index = 1
+local forceApplied = -20000
 
 physics.start()
 physics.setGravity( 0, 9)
@@ -42,35 +43,44 @@ function scene:create( event )
 				end
 
 				local xAbsPos, yAbsPos = terrains[1]:localToContent(0,0)
-				print(xAbsPos)
 				if xAbsPos < display.contentWidth * 0.25 * -1 then
-						print("DOOOOONE")
-						terrains[1]:removeSelf( )
-						table.remove(terrains, 1)
-						table.insert(terrains, terrain.newTerrain(self.terrains, terrains[#terrains].x + terrains[#terrains].width))
-					end
+					terrains[1]:removeSelf( )
+					table.remove(terrains, 1)
+					table.insert(terrains, terrain.newTerrain(self.terrains, terrains[#terrains].x + terrains[#terrains].width))
+				end
 			end
 
-			print("TRYING")
 			self.animation = Runtime:addEventListener("enterFrame", moveBg )
-
-			--self.background_animation = timer.performWithDelay( 100, moveBg, -1 )
 		end
 
-		
+	end
 
-		if ( self.llama.canJump == 2 ) then
+	local function holdTimer(e)
+		forceApplied = forceApplied - 5000
+		print("Ruinning")
+	end
+
+	local function jumpLlama(e)
+		if e.phase == "began" then
+			Runtime:addEventListener("enterFrame", holdTimer)
+		elseif e.phase == "ended" then
+		print("ENDED")
+			local force = forceApplied
+			Runtime:removeEventListener( "enterFrame", holdTimer)
+			forceApplied = -2000
+			print("Force")
+			print(force)
+			if ( self.llama.canJump == 2 ) then
       		--jump procedure here
-      		self.llama.canJump = self.llama.canJump + 1
-      		self.llama:applyForce( 0, -50000, self.llama.x, self.llama.y)
-   		end
-		if ( self.llama.canJump == 1 ) then
-      		--jump procedure here
-      		print("HERE")
-      		self.llama.canJump = self.llama.canJump + 1
-      		self.llama:applyForce( 0, -35000, self.llama.x, self.llama.y)
-   		end
-   		
+      			self.llama.canJump = 0
+      			self.llama:applyForce( 0, force, self.llama.x - 40000, self.llama.y)
+   			end
+			if ( self.llama.canJump == 1 ) then
+      			--jump procedure here
+      			self.llama.canJump = self.llama.canJump + 1
+      			self.llama:applyForce( 0, force, self.llama.x, self.llama.y)
+   			end
+		end
 
 	end
 
@@ -79,6 +89,7 @@ function scene:create( event )
 	bg.x = display.contentCenterX
 	bg.y = display.contentCenterY
 	bg:addEventListener( "tap", tapScreen )
+	bg:addEventListener( "touch", jumpLlama )
 	
 end
 
