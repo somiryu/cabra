@@ -7,6 +7,7 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 local physics = require( "physics" )
+local scoreM = require("libs.score")
 
 -- include Corona's "widget" library
 local widget = require "widget"
@@ -25,16 +26,40 @@ local index = 1
 local forceApplied = -20000
 local terrainSpeed = -800
 local ceilingSpeed = -350
+local score
+local scoreLabel
+local powerUp
 
 physics.start()
-physics.setGravity( 0, 9)
+physics.setGravity( 0, 30)
 --physics.setDrawMode( "hybrid" )
+
 
 
 
 
 function scene:create( event )
 	local sceneGroup = self.view
+
+	collisionListener = function(e)
+	
+	if e.phase == "began" then
+			print("COLLISION")
+			if e.other.objType == "ground" then
+				print("Setting to 1")
+				self.llama.canJump = 1
+				print("TOUCHING GROUND: ".. self.llama.canJump)
+				if e.target.state ~= "stand by" then 
+					llama.changeSprite(e.target, "walk")
+					self.llama.state = "grounded"
+				else
+					llama.changeSprite(e.target, "standby")
+				end
+				e.target:setLinearVelocity( 0, 0 )
+
+			end
+		end
+	end
 
 	function tapScreen(e)
 		if game_active == false then
@@ -58,6 +83,9 @@ function scene:create( event )
 					gameOver.y = display.contentHeight * 0.4
 					gameOver.xScale = 0.01
 					gameOver.yScale = 0.01
+					local highScore = scoreM.getPlayerScore(score)
+					local highScoreLabel = display.newText( sceneGroup, "HIGHSCORE: "..highScore, display.contentCenterX, 
+						gameOver.y+220, "Arial", 50 )
 
 					local function restart(e)
 						local currScene = composer.getSceneName( "current" )
@@ -87,6 +115,9 @@ function scene:create( event )
 					terrains[1]:removeSelf( )
 					table.remove(terrains, 1)
 					table.insert(terrains, terrain.newTerrain(self.terrains, terrains[#terrains].x + terrains[#terrains].width))
+					score = score + 1
+					scoreLabel.text = score
+					powerUp:toFront()
 				end
 
 				local xAbsPos, yAbsPos = ceilings[1]:localToContent(0,0)
@@ -94,6 +125,8 @@ function scene:create( event )
 					ceilings[1]:removeSelf( )
 					table.remove(ceilings, 1)
 					table.insert(ceilings, ceiling.newCeiling(self.terrains, ceilings[#ceilings].x + ceilings[#ceilings].width))
+					scoreLabel:toFront( )
+
 				end
 
 				--gameOver
@@ -103,6 +136,7 @@ function scene:create( event )
       					self.llama.state = "dead"
 						timer.performWithDelay( 1000, gameOver, 1 )
 						game_ended = true
+
 					end
 				end
 
@@ -113,11 +147,13 @@ function scene:create( event )
       				self.llama.state = "falling"
 				end
 
+				--[[
 				if yAccel > 0 and self.llama.state == "grounded" then
 					llama.changeSprite(self.llama, "fall")
       				self.llama.state = "falling"
+      				print("Setting to 2 in ACCEL")
       				self.llama.canJump = 2
-				end
+				end]]
 
 				if yAccel > 300 and self.llama.state == "falling" then
 					llama.changeSprite(self.llama, "freefall")
@@ -131,30 +167,50 @@ function scene:create( event )
 	end
 
 	local function holdTimer(e)
-		forceApplied = forceApplied - 5000
+		forceApplied = forceApplied - 10000
 	end
 
 	local function jumpLlama(e)
+		print("INIT CAN JUMP: "..self.llama.canJump)
 		if e.phase == "began" then
+			print("BEGAN CAN JUMP:" .. self.llama.canJump)
 			Runtime:addEventListener("enterFrame", holdTimer)
 		elseif e.phase == "ended" then
 			local force = forceApplied
 			Runtime:removeEventListener( "enterFrame", holdTimer)
-			forceApplied = -2000
+			--forceApplied = -10000
+			print("CAN JUMP BEFORE:" .. self.llama.canJump)
+			if ( self.llama.canJump == 3 ) then
+      		--jump procedure here
+      			print("QUICK FALL")
+      			llama.changeSprite(self.llama, "hitwall")
+      			self.llama.state = "rush_down"
+      			print("Setting to 0")
+      			self.llama.canJump = 0
+      			self.llama:applyForce( 0, 100000)
+   			end
+
 			if ( self.llama.canJump == 2 ) then
       		--jump procedure here
       			print("JUMP 2")
       			llama.changeSprite(self.llama, "jump")
       			self.llama.state = "raising"
-      			self.llama.canJump = 0
-      			self.llama:applyForce( 0, force, self.llama.x - 60000, self.llama.y)
+      			print("Setting to 3")
+      			self.llama.canJump = 3
+      			if force < -120000 then force = -120000 end
+      			self.llama:setLinearVelocity( 0, 0 )
+      			self.llama:applyForce( 0, force, self.llama.x, self.llama.y)
    			end
 			if ( self.llama.canJump == 1 ) then
       			--jump procedure here
       			print("JUMP 1")
       			llama.changeSprite(self.llama, "jump")
       			self.llama.state = "raising"
-      			self.llama.canJump = self.llama.canJump + 1
+      			print("Setting to 2")
+      			self.llama.canJump = 2
+      			print(force)
+      			if force < -100000 then force = -100000 end
+      			print(force)
       			self.llama:applyForce( 0, force, self.llama.x, self.llama.y)
    			end
 		end
@@ -168,6 +224,45 @@ function scene:create( event )
 	bg:addEventListener( "tap", tapScreen )
 	bg:addEventListener( "touch", jumpLlama )
 	
+	score = 0
+	scoreLabel = display.newText( sceneGroup, score, display.contentWidth - 80, 40, "Arial", 120 )
+	scoreLabel.anchorX, scoreLabel.anchorY = 1, 0
+
+	--powerUp Test
+	local function activatePower(e)
+		if e.phase == "began" then
+			print("YES")
+		local power = e.target
+		if power.active == false then
+			print("ACTIVATING")
+			power.active = true
+			terrainSpeed = terrainSpeed * 1.3
+			ceilingSpeed = terrainSpeed * 1.3
+			self.llama:setLinearVelocity( 0, 0 )
+			self.llama.bodyType = "kinematic"
+
+
+			local function stopPower(e)
+				local function activateBotton(e)
+					power.active = false
+				end
+
+				timer.performWithDelay( 2000, activateBotton )
+				terrainSpeed = -800
+				ceilingSpeed = -350
+				self.llama.bodyType = "dynamic"
+			end
+
+			timer.performWithDelay( 500, stopPower, 1 )
+		end
+		end
+		return true
+	end
+
+	powerUp = display.newRect( sceneGroup, display.contentWidth - 20, display.contentHeight-20, 150, 150 )
+	powerUp.active = false
+	powerUp.anchorX, powerUp.anchorY = 1, 1
+	powerUp:addEventListener( 'touch', activatePower )
 end
 
 function scene:show( event )
@@ -176,6 +271,7 @@ function scene:show( event )
 	
 	if phase == "will" then
 		-- Called when the scene is still off screen and is about to move on screen
+		score = 0
 	elseif phase == "did" then
 		-- Called when the scene is now on screen
 		-- 
@@ -194,10 +290,11 @@ function scene:show( event )
 			ceilings[i] = ceiling.newCeiling(self.terrains, lastXC)
 			lastXC = lastXC + ceilings[i].width
 		end
-
+		scoreLabel:toFront()
+		powerUp:toFront()
 		-- CREATE A NE LLAMA
 		self.llama = llama.new(sceneGroup)
-
+		self.llama:addEventListener( "collision", collisionListener )
 
 
 	end	

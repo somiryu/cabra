@@ -3,13 +3,13 @@ local Utils = require "libs.utils"
 local terrain= {}
 
 terrain.dimensions = {
-	{105,415},
-	{104,378},
-	{104,330},
-	{104,279},
-	{104,224},
-	{104,188},
-	{104,138},
+	{145,415},
+	{144,378},
+	{144,330},
+	{144,279},
+	{144,224},
+	{144,188},
+	{144,138},
 	{210,416},
 	{210,390},
 	{210,354},
@@ -29,7 +29,7 @@ terrain.dimensions = {
 }
 
 terrain.newTerrain = function(group, lastX, index)
-	local gaps = math.random(0,2500)
+	local gaps = math.random(0,3000)
 	local t
 	if index and index == 1 then 
 		gaps = 1500 
@@ -45,9 +45,9 @@ terrain.newTerrain = function(group, lastX, index)
 		t.x = lastX -3
 		t.y = display.contentHeight + 50
 		t.anchorX, t.anchorY = 0, 1
-		local hW = t.width/2 -5
-		local hH = t.height/2 * -1 - 5
-		physics.addBody( t, "kinematic" )
+		local hW = t.width/2 
+		local hH = t.height/2 
+		physics.addBody( t, "kinematic", {shape={hW,hH,hW,hH * -1, hW * -1, hH * -1 + 30, hW* -1, hH * -1, hW * -1, hH}} )
 		t.isSleepingAllowed = false
 		t.objType = "ground"
 

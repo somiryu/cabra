@@ -4,22 +4,7 @@ local objectSheet = require("libs.cabrawalk")
 
 local llama= {}
 
-collisionListener = function(e)
-	
-	if e.phase == "began" then
-		print("COLLISION")
-		if e.other.objType == "ground" then
-			if e.target.state ~= "stand by" then 
-				llama.changeSprite(e.target, "walk")
-				e.target.state = "grounded"
-			else
-				llama.changeSprite(e.target, "standby")
-			end
-			e.target:setLinearVelocity( 0, 0 )
-			e.target.canJump = 1
-		end
-	end
-end
+
 
 llama.new = function(group)
 	local llama = llama.newCabraWalk
@@ -34,7 +19,7 @@ llama.new = function(group)
 	llama.canJump = 1
 	llama.state = "stand by"
 	llama.isSleepingAllowed = false
-	llama:addEventListener( "collision", collisionListener )
+	
 
 	return llama
 end
