@@ -14,3 +14,5 @@ local composer = require "composer"
 
 -- load menu screen
 composer.gotoScene( "scenes.game" )
+
+-- New text in here --
