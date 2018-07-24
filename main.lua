@@ -16,3 +16,5 @@ local composer = require "composer"
 composer.gotoScene( "scenes.game" )
 
 -- New text in here --
+
+-- Another text here-- 
